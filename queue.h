@@ -1,12 +1,10 @@
 #ifndef QUEUE
 #define QUEUE
 
-#include "person.h"
+#include "line.h"
 
 typedef struct {
-    Person* first;
-    Person* last;
-    Person* lines;
+    Line* lines[3];
     int size;
 } Queue;
 
