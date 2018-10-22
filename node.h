@@ -5,7 +5,7 @@
 
 typedef struct {
     Person* person;
-    Node* next;
+    struct Node* next;
     int priority;
 } Node;
 
