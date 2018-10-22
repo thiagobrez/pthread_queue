@@ -3,12 +3,12 @@
  * @author João Grasel Cariolato
  * @author Thiago Brezinski
 */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <pthread.h>
+#include <string.h>
 #include "queue.h"
 
 int ID_COUNTER = 0;
@@ -50,35 +50,6 @@ void remove_from_queue(Queue* queue, int line) {
     pthread_mutex_unlock(&lock);
 }
 
-void* simulator(void* args) {
-    Queue* queue = args;
-
-    balcony_thids = (pthread_t *) malloc(BALCONY_THREADS * sizeof(pthread_t));
-    for(int i = 0; i < BALCONY_THREADS; i++) {
-        pthread_create(&balcony_thids[i], NULL, balcony, NULL);
-    }
-
-    while(1) {
-        Node* node = malloc(sizeof(Node));
-        node->priority = random_priority(3);
-        node->person = malloc(sizeof(Person));
-    
-        char string_priority[12], string_counter[12];
-        sprintf(string_priority, "%d", node->priority);
-        sprintf(string_counter, "%d", (ID_COUNTER + 1));
-
-        char id[32] = strcat(string_priority, "P");
-        id[32] = strcat(string_priority, string_counter);
-        *node->person->id = id;
-
-        add_to_queue(queue, node);
-
-        sleep(3);
-    }
-
-    pthread_exit(NULL);
-}
-
 void* balcony(void* args) {
     Queue* queue = args;
 
@@ -91,6 +62,29 @@ void* balcony(void* args) {
             remove_from_queue(queue, 2);
         }
         sleep(5);
+    }
+
+    pthread_exit(NULL);
+}
+
+void* simulator(void* args) {
+    Queue* queue = args;
+
+    balcony_thids = (pthread_t *) malloc(BALCONY_THREADS * sizeof(pthread_t));
+    for(int i = 0; i < BALCONY_THREADS; i++) {
+        pthread_create(&balcony_thids[i], NULL, balcony, NULL);
+    }
+
+    while(1) {
+        Node* node = malloc(sizeof(Node));
+        node->priority = random_priority(3);
+        node->person = malloc(sizeof(Person));
+        node->person->id = ID_COUNTER + 1;
+        node-> next = NULL;
+
+        add_to_queue(queue, node);
+
+        sleep(3);
     }
 
     pthread_exit(NULL);

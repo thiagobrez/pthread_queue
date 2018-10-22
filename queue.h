@@ -5,6 +5,7 @@
 
 typedef struct {
     Line* lines[3];
+    // Line* lines;
     int size;
 } Queue;
 

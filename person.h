@@ -2,7 +2,7 @@
 #define PERSON
 
 typedef struct {
-    char id[32];
+    int id;
 } Person;
 
 #endif

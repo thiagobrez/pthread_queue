@@ -3,7 +3,7 @@
 
 #include "person.h"
 
-typedef struct {
+typedef struct Node {
     Person* person;
     struct Node* next;
     int priority;
