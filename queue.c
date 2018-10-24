@@ -25,7 +25,8 @@ void add_to_queue(Queue* queue, Node* node) {
     pthread_mutex_lock(&lock);
 
     if(queue->size == 0) {
-        queue->lines[node->priority -1]->first = queue->lines[node->priority -1]->last = node;
+        queue->lines[node->priority -1]->first = node;
+        queue->lines[node->priority -1]->last = node;
     } else {
         queue->lines[node->priority -1]->last->next = (struct Node*) node;
         queue->lines[node->priority -1]->last = queue->lines[node->priority -1]->last->next;
@@ -43,6 +44,7 @@ void remove_from_queue(Queue* queue, int line) {
     Node* deleted_node = queue->lines[line]->first;
     queue->lines[line]->first = queue->lines[line]->first->next;
     deleted_node->next = NULL;
+    free(deleted_node);
 
     queue->lines[line]->size--;
     queue->size--;
@@ -53,18 +55,34 @@ void remove_from_queue(Queue* queue, int line) {
 void* balcony(void* args) {
     Queue* queue = args;
 
-    while(queue->size) {
-        if(queue->lines[0]->size) {
-            remove_from_queue(queue, 0);
-        } else if(queue->lines[1]->size) {
-            remove_from_queue(queue, 1);
-        } else if(queue->lines[2]->size) {
-            remove_from_queue(queue, 2);
+    while(1) {
+        if(queue->size) {
+            if(queue->lines[0]->size) {
+                remove_from_queue(queue, 0);
+            } else if(queue->lines[1]->size) {
+                remove_from_queue(queue, 1);
+            } else if(queue->lines[2]->size) {
+                remove_from_queue(queue, 2);
+            }
+            sleep(5);
         }
-        sleep(5);
     }
+}
 
-    pthread_exit(NULL);
+Person* create_person() {
+    Person* person = malloc(sizeof(Person));
+    person->id = ID_COUNTER + 1;
+
+    return person;
+}
+
+Node* create_node() {
+    Node* node = malloc(sizeof(Node));
+    node->priority = random_priority(3);
+    node->person = create_person();
+    node->next = NULL;
+
+    return node;
 }
 
 void* simulator(void* args) {
@@ -76,33 +94,43 @@ void* simulator(void* args) {
     }
 
     while(1) {
-        Node* node = malloc(sizeof(Node));
-        node->priority = random_priority(3);
-        node->person = malloc(sizeof(Person));
-        node->person->id = ID_COUNTER + 1;
-        node-> next = NULL;
-
+        Node* node = create_node();
         add_to_queue(queue, node);
-
-        sleep(3);
+        sleep(1);
     }
 
     pthread_exit(NULL);
 }
 
+Line* create_line() {
+    Line* line = malloc(sizeof(Line));
+
+    line->first = NULL;
+    line->last = NULL;
+    line->size = 0;
+
+    return line;
+}
+
+Queue* create_queue() {
+   Queue* queue = malloc(sizeof(Queue));
+   queue->size = 0;
+
+    for(int i = 0; i < 3; i++) {
+        queue->lines[i] = create_line();
+    }
+
+   return queue;
+}
+
 int main() {
     printf("Enter the number of balcony threads you want to create: ");
+    fflush(stdin);
     scanf("%d", &BALCONY_THREADS);
 
    	pthread_mutex_init(&lock, NULL);
 
-    Queue* queue = malloc(sizeof(Queue));
-    queue->size = 0;
-
-    for(int i = 0; i < 3; i++) {
-        queue->lines[i] = malloc(sizeof(Line));
-        queue->lines[i]->size = 0;
-    }
+    Queue* queue = create_queue();
 
     pthread_create(&simulator_thid, NULL, simulator, (void *) queue);
 
