@@ -18,7 +18,7 @@ pthread_mutex_t lock;
 
 int random_priority(int max) {
     srand((unsigned) time(NULL));
-    return (rand() % max) + 1;git 
+    return (rand() % max) + 1;
 }
 
 void add_to_queue(Queue* queue, Node* node) {
@@ -35,32 +35,42 @@ void add_to_queue(Queue* queue, Node* node) {
     queue->lines[node->priority -1]->size++;
     queue->size++;
 
-    pthread_mutex_unlock(&lock);
+    printf("Created Person with id %i and priority %i \n", node->person->id, node->priority);
 
-    printf("Created Person with id %i with priority %i \n", node->person->id, node->priority);
+    printf("size %i \n", queue->size);
+
+    pthread_mutex_unlock(&lock);
 }
 
 void remove_from_queue(Queue* queue, int line) {
     pthread_mutex_lock(&lock);
 
+    if(queue->lines[line]->size < 0) {
+        pthread_mutex_unlock(&lock);
+        return;
+    }
+
     Node* deleted_node = queue->lines[line]->first;
     queue->lines[line]->first = queue->lines[line]->first->next;
     deleted_node->next = NULL;
-    printf("Deleted Person with id %i from priority line %i \n", deleted_node->person->id, deleted_node->priority);
+    printf("Deleted Person with id %i from priority %i \n", deleted_node->person->id, deleted_node->priority);
     free(deleted_node);
 
     queue->lines[line]->size--;
     queue->size--;
 
+    printf("size %i \n", queue->size);
+
     pthread_mutex_unlock(&lock);
 }
 
 void* balcony(void* args) {
-    printf("Created balcony thread with id: %i \n", (int) pthread_self());
+    printf("Created balcony thread with id %i \n", (int) pthread_self());
 
     Queue* queue = args;
 
     while(1) {
+        // printf("testando size \n");
         if(queue->size) {
             if(queue->lines[0]->size) {
                 remove_from_queue(queue, 0);
