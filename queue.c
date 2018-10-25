@@ -12,13 +12,13 @@
 #include "queue.h"
 
 int ID_COUNTER = 0;
-int BALCONY_THREADS;
+int BALCONY_THREADS[1];
 pthread_t simulator_thid, *balcony_thids;
 pthread_mutex_t lock;
 
 int random_priority(int max) {
     srand((unsigned) time(NULL));
-    return (rand() % max) + 1;
+    return (rand() % max) + 1;git 
 }
 
 void add_to_queue(Queue* queue, Node* node) {
@@ -36,6 +36,8 @@ void add_to_queue(Queue* queue, Node* node) {
     queue->size++;
 
     pthread_mutex_unlock(&lock);
+
+    printf("Created Person with id %i with priority %i \n", node->person->id, node->priority);
 }
 
 void remove_from_queue(Queue* queue, int line) {
@@ -44,6 +46,7 @@ void remove_from_queue(Queue* queue, int line) {
     Node* deleted_node = queue->lines[line]->first;
     queue->lines[line]->first = queue->lines[line]->first->next;
     deleted_node->next = NULL;
+    printf("Deleted Person with id %i from priority line %i \n", deleted_node->person->id, deleted_node->priority);
     free(deleted_node);
 
     queue->lines[line]->size--;
@@ -53,6 +56,8 @@ void remove_from_queue(Queue* queue, int line) {
 }
 
 void* balcony(void* args) {
+    printf("Created balcony thread with id: %i \n", (int) pthread_self());
+
     Queue* queue = args;
 
     while(1) {
@@ -86,11 +91,13 @@ Node* create_node() {
 }
 
 void* simulator(void* args) {
-    Queue* queue = args;
+    printf("Created simulator thread with id %i \n", (int) pthread_self());
 
-    balcony_thids = (pthread_t *) malloc(BALCONY_THREADS * sizeof(pthread_t));
-    for(int i = 0; i < BALCONY_THREADS; i++) {
-        pthread_create(&balcony_thids[i], NULL, balcony, NULL);
+    Queue* queue = args;
+    balcony_thids = calloc(BALCONY_THREADS[0], sizeof(pthread_t));
+
+    for(int i = 0; i < BALCONY_THREADS[0]; i++) {
+        pthread_create(&balcony_thids[i], NULL, balcony, (void *) queue);
     }
 
     while(1) {
@@ -126,16 +133,14 @@ Queue* create_queue() {
 int main() {
     printf("Enter the number of balcony threads you want to create: ");
     fflush(stdin);
-    scanf("%d", &BALCONY_THREADS);
+    scanf("%d", &BALCONY_THREADS[0]);
 
    	pthread_mutex_init(&lock, NULL);
 
     Queue* queue = create_queue();
-
     pthread_create(&simulator_thid, NULL, simulator, (void *) queue);
-
     pthread_join(simulator_thid, NULL);
-    for(int i = 0; i < BALCONY_THREADS; i++) {
+    for(int i = 0; i < BALCONY_THREADS[0]; i++) {
         pthread_join(balcony_thids[i], NULL);
     }
 
