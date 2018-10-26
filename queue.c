@@ -22,8 +22,11 @@ int random_priority(int max) {
 }
 
 void add_to_queue(Queue* queue, Node* node) {
+    printf("Simulator waiting to add \n");
+
     pthread_mutex_lock(&lock);
 
+    printf("Simulator entered CS \n");
     if(queue->size == 0) {
         queue->lines[node->priority -1]->first = node;
         queue->lines[node->priority -1]->last = node;
@@ -32,20 +35,32 @@ void add_to_queue(Queue* queue, Node* node) {
         queue->lines[node->priority -1]->last = queue->lines[node->priority -1]->last->next;
     }
 
-    queue->lines[node->priority -1]->size++;
+    queue->lines[node->priority - 1]->size++;
     queue->size++;
 
-    printf("Created Person with id %i and priority %i \n", node->person->id, node->priority);
+    printf("Simulator created Person with id %i and priority %i \n", node->person->id, node->priority);
 
-    printf("size %i \n", queue->size);
-
+    printf("Simulator left CS \n");
     pthread_mutex_unlock(&lock);
 }
 
-void remove_from_queue(Queue* queue, int line) {
+void remove_from_queue(Queue* queue) {
+    printf("Balcony %i waiting to remove \n", (int) pthread_self());
     pthread_mutex_lock(&lock);
+    printf("Balcony %i entered CS \n", (int) pthread_self());
 
-    if(queue->lines[line]->size < 0) {
+    int line = 0;
+
+    if(queue->size) {
+        if(queue->lines[0]->size) {
+            line = 0;
+        } else if(queue->lines[1]->size) {
+            line = 1;
+        } else if(queue->lines[2]->size) {
+            line = 2;
+        }
+    } else {
+        printf("Balcony %i left CS doing nothing \n", (int) pthread_self());
         pthread_mutex_unlock(&lock);
         return;
     }
@@ -53,40 +68,33 @@ void remove_from_queue(Queue* queue, int line) {
     Node* deleted_node = queue->lines[line]->first;
     queue->lines[line]->first = queue->lines[line]->first->next;
     deleted_node->next = NULL;
-    printf("Deleted Person with id %i from priority %i \n", deleted_node->person->id, deleted_node->priority);
+    printf("Balcony %i deleted Person with id %i from priority %i \n", (int) pthread_self(), deleted_node->person->id, deleted_node->priority);
     free(deleted_node);
 
     queue->lines[line]->size--;
     queue->size--;
 
-    printf("size %i \n", queue->size);
-
+    printf("Balcony %i left CS \n", (int) pthread_self());
     pthread_mutex_unlock(&lock);
 }
 
 void* balcony(void* args) {
-    printf("Created balcony thread with id %i \n", (int) pthread_self());
+    // printf("Created balcony thread with id %i \n", (int) pthread_self());
 
     Queue* queue = args;
 
     while(1) {
-        // printf("testando size \n");
-        if(queue->size) {
-            if(queue->lines[0]->size) {
-                remove_from_queue(queue, 0);
-            } else if(queue->lines[1]->size) {
-                remove_from_queue(queue, 1);
-            } else if(queue->lines[2]->size) {
-                remove_from_queue(queue, 2);
-            }
-            sleep(5);
-        }
+        remove_from_queue(queue);
+        sleep(5);
     }
+
+    pthread_exit(NULL);
 }
 
 Person* create_person() {
     Person* person = malloc(sizeof(Person));
-    person->id = ID_COUNTER + 1;
+    ID_COUNTER++;
+    person->id = ID_COUNTER;
 
     return person;
 }
@@ -101,14 +109,9 @@ Node* create_node() {
 }
 
 void* simulator(void* args) {
-    printf("Created simulator thread with id %i \n", (int) pthread_self());
+    // printf("Created simulator thread with id %i \n", (int) pthread_self());
 
     Queue* queue = args;
-    balcony_thids = calloc(BALCONY_THREADS[0], sizeof(pthread_t));
-
-    for(int i = 0; i < BALCONY_THREADS[0]; i++) {
-        pthread_create(&balcony_thids[i], NULL, balcony, (void *) queue);
-    }
 
     while(1) {
         Node* node = create_node();
@@ -148,7 +151,13 @@ int main() {
    	pthread_mutex_init(&lock, NULL);
 
     Queue* queue = create_queue();
+
     pthread_create(&simulator_thid, NULL, simulator, (void *) queue);
+    balcony_thids = calloc(BALCONY_THREADS[0], sizeof(pthread_t));
+    for(int i = 0; i < BALCONY_THREADS[0]; i++) {
+        pthread_create(&balcony_thids[i], NULL, balcony, (void *) queue);
+    }
+
     pthread_join(simulator_thid, NULL);
     for(int i = 0; i < BALCONY_THREADS[0]; i++) {
         pthread_join(balcony_thids[i], NULL);
