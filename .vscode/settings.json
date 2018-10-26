@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "pthread.h": "c",
-        "queue.h": "c"
+        "queue.h": "c",
+        "memory": "c"
     }
 }

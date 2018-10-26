@@ -28,10 +28,14 @@ void add_to_queue(Queue* queue, Node* node) {
 
     printf("Simulator entered CS \n");
     if(queue->size == 0) {
+        printf("entrou size %i \n", queue->size);
         queue->lines[node->priority -1]->first = node;
         queue->lines[node->priority -1]->last = node;
     } else {
-        queue->lines[node->priority -1]->last->next = (struct Node*) node;
+        printf("entrou size %i \n", queue->size);
+        // queue->lines[node->priority -1]->last->next = (struct Node*) node;
+        queue->lines[node->priority -1]->last->next = node;
+        printf("passou struct Node* \n");
         queue->lines[node->priority -1]->last = queue->lines[node->priority -1]->last->next;
     }
 
@@ -85,7 +89,8 @@ void* balcony(void* args) {
 
     while(1) {
         remove_from_queue(queue);
-        sleep(5);
+        printf("Balcony %i is sleeping \n", (int) pthread_self());
+        sleep(10);
     }
 
     pthread_exit(NULL);
@@ -110,7 +115,6 @@ Node* create_node() {
 
 void* simulator(void* args) {
     // printf("Created simulator thread with id %i \n", (int) pthread_self());
-
     Queue* queue = args;
 
     while(1) {
