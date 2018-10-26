@@ -33,7 +33,6 @@ void add_to_queue(Queue* queue, Node* node) {
     } else {
         // queue->lines[node->priority -1]->last->next = (struct Node*) node;
         queue->lines[node->priority -1]->last->next = node;
-        printf("passou struct Node* \n");
         queue->lines[node->priority -1]->last = queue->lines[node->priority -1]->last->next;
     }
 
