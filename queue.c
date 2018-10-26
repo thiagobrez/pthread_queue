@@ -27,12 +27,10 @@ void add_to_queue(Queue* queue, Node* node) {
     pthread_mutex_lock(&lock);
 
     printf("Simulator entered CS \n");
-    if(queue->size == 0) {
-        printf("entrou size %i \n", queue->size);
+    if(queue->lines[node->priority -1]->size == 0) {
         queue->lines[node->priority -1]->first = node;
         queue->lines[node->priority -1]->last = node;
     } else {
-        printf("entrou size %i \n", queue->size);
         // queue->lines[node->priority -1]->last->next = (struct Node*) node;
         queue->lines[node->priority -1]->last->next = node;
         printf("passou struct Node* \n");
@@ -78,12 +76,14 @@ void remove_from_queue(Queue* queue) {
     queue->lines[line]->size--;
     queue->size--;
 
+    if(queue->lines[line]->size == 0) queue->lines[line]->last = NULL;
+
     printf("Balcony %i left CS \n", (int) pthread_self());
     pthread_mutex_unlock(&lock);
 }
 
 void* balcony(void* args) {
-    // printf("Created balcony thread with id %i \n", (int) pthread_self());
+    printf("Created balcony thread with id %i \n", (int) pthread_self());
 
     Queue* queue = args;
 
@@ -114,7 +114,7 @@ Node* create_node() {
 }
 
 void* simulator(void* args) {
-    // printf("Created simulator thread with id %i \n", (int) pthread_self());
+    printf("Created simulator thread with id %i \n", (int) pthread_self());
     Queue* queue = args;
 
     while(1) {

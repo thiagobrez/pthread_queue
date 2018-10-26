@@ -6,6 +6,7 @@
 typedef struct Node {
     Person* person;
     struct Node* next;
+    // Node* next;
     int priority;
 } Node;
 
