@@ -2,6 +2,8 @@
  * @author Bruno Henrique Bertozzo
  * @author João Grasel Cariolato
  * @author Thiago Brezinski
+ * 
+ * Implementation in C of a priority-based multithread consumer-producer queue.
 */
 #include <stdlib.h>
 #include <stdio.h>
